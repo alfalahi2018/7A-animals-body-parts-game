@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Animal Body Parts Game</title>
+<style>
+:root{--ink:#12343b;--teal:#14877f;--lime:#d9f2e3;--sun:#ffbe3d;--ok:#1fa85a;--bad:#e0453a}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Trebuchet MS","Segoe UI",Arial,sans-serif;color:var(--ink);background:linear-gradient(170deg,#d7f3ee 0%,#fff6d6 100%);min-height:100vh}
+.wrap{max-width:780px;margin:0 auto;padding:14px}
+header{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.logo{font-size:1.4rem;font-weight:900;background:#fff;border-radius:40px;padding:6px 20px;border:4px solid var(--teal)}
+.stats{display:flex;gap:8px;align-items:center}
+.pill{background:#fff;border:3px solid #bfe3dc;border-radius:30px;padding:6px 14px;font-weight:800}
+button{font-family:inherit;cursor:pointer}
+.mute{border:3px solid #bfe3dc;background:#fff;border-radius:50%;width:44px;height:44px;font-size:1.3rem}
+.trail{display:flex;gap:5px;margin:14px 0}
+.trail i{flex:1;height:14px;border-radius:8px;background:#fff;border:2px solid #bfe3dc}
+.trail i.on{background:var(--ok);border-color:var(--ok)}
+.trail i.off{background:var(--bad);border-color:var(--bad)}
+.trail i.now{background:var(--sun);border-color:var(--sun)}
+.card{background:#fffdf5;border:4px solid var(--teal);border-radius:26px;padding:20px;margin:12px 0;box-shadow:0 6px 0 rgba(18,52,59,.13)}
+h1,h2{margin:.2em 0}
+.tag{display:inline-block;background:var(--lime);border-radius:12px;padding:4px 12px;font-weight:800}
+.scene{display:flex;align-items:center;justify-content:center;gap:14px;margin:8px 0}
+.scene .an{font-size:5rem;line-height:1}
+.scene .ar{font-size:2.4rem;animation:pt 1s infinite alternate}
+@keyframes pt{to{transform:translateX(-10px)}}
+.clue{background:#fff;border:3px dashed var(--teal);border-radius:16px;padding:10px 14px;text-align:center;font-size:1.15rem;font-weight:700}
+.clue b{color:var(--teal)}
+.slot{margin:12px auto;max-width:300px;height:56px;border:4px solid var(--teal);border-radius:16px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:900}
+.bank{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-top:10px}
+.w{background:#fff;border:3px solid #bfe3dc;border-radius:14px;padding:10px 6px;font-size:1.1rem;font-weight:800;color:var(--ink)}
+.w:hover:not(:disabled){transform:translateY(-2px);border-color:var(--sun)}
+.w.wrong{background:#ffd5d0;border-color:var(--bad);text-decoration:line-through}
+.w.right{background:#c9f3d8;border-color:var(--ok)}
+.w.used{opacity:.35;background:#eee}
+.btn{background:var(--teal);color:#fff;border:0;border-bottom:5px solid #0c524d;border-radius:16px;padding:12px 26px;font-size:1.15rem;font-weight:900;margin:10px 6px 0 0}
+.btn.o{background:var(--sun);color:var(--ink);border-bottom-color:#b58114}
+.btn:active{transform:translateY(3px);border-bottom-width:2px}
+button:focus-visible{outline:4px solid var(--sun)}
+.fb{min-height:30px;text-align:center;font-weight:900;font-size:1.15rem;margin-top:10px}
+.fb.ok{color:var(--ok)}.fb.no{color:var(--bad)}
+.shake{animation:sh .4s}
+@keyframes sh{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.pop{animation:pp .5s}
+@keyframes pp{50%{transform:scale(1.04)}}
+.stars{font-size:3rem;text-align:center}
+.center{text-align:center}
+input[type=text]{width:100%;font:inherit;font-size:1.3rem;text-align:center;padding:10px;border:4px solid #bfe3dc;border-radius:16px;color:var(--ink)}
+input:focus{outline:4px solid var(--sun)}
+.learn{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.learn button{background:#fff;border:3px solid #bfe3dc;border-radius:16px;padding:10px;font-size:1.05rem;font-weight:800;color:var(--ink)}
+.learn span{display:block;font-size:2.2rem}
+.rev{text-align:left;margin:6px 0;padding:8px 12px;border-radius:12px;background:#fff0ec;border-left:6px solid var(--bad)}
+.fall{position:fixed;top:-40px;font-size:2rem;pointer-events:none;animation:fl 2.8s linear forwards;z-index:9}
+@keyframes fl{to{transform:translateY(110vh) rotate(360deg)}}
+footer{text-align:center;font-weight:800;margin:18px 0 6px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+ <div class="logo">🔬 Animal Body Parts</div>
+ <div class="stats"><span class="pill">⭐ <span id="sc">0</span></span><span class="pill">🔥 <span id="st">0</span></span><button class="mute" id="mu" aria-label="Sound on or off">🔊</button></div>
+</header>
+<div class="trail" id="tr"></div>
+<main id="app"></main>
+<footer>Created by T.Badria Alfalahi ✨</footer>
+</div>
+<script>
+let ctx,muted=false,score=0,streak=0,best=0,idx=-1,name="",tries=0,locked=false,res=[],used=[],bad=[];
+const $=id=>document.getElementById(id);
+function ac(){if(!ctx){try{ctx=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(ctx&&ctx.state==="suspended")ctx.resume();return ctx}
+function tone(f,d,type="sine",delay=0,vol=.2){if(muted)return;const c=ac();if(!c)return;const t=c.currentTime+delay,o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+d)}
+const sfx={
+ click:()=>tone(660,.08,"square",0,.08),
+ ok:()=>[523,659,784,1046].forEach((f,i)=>tone(f,.18,"triangle",i*.09,.22)),
+ no:()=>{tone(200,.25,"sawtooth",0,.15);tone(150,.3,"sawtooth",.15,.15)},
+ win:()=>[523,659,784,659,784,1046,1318].forEach((f,i)=>tone(f,.25,"triangle",i*.13,.25)),
+ star:()=>tone(1200,.15,"sine",0,.15)
+};
+function speak(t){if(muted||!window.speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="en-US";u.rate=.85;speechSynthesis.speak(u)}
+function confetti(n=24){const e=["🎉","⭐","🌟","✨","🐾"];for(let i=0;i<n;i++){const s=document.createElement("span");s.className="fall";s.textContent=e[i%e.length];s.style.left=Math.random()*100+"vw";s.style.animationDelay=Math.random()*.8+"s";document.body.appendChild(s);setTimeout(()=>s.remove(),3800)}}
+$("mu").onclick=()=>{muted=!muted;$("mu").textContent=muted?"🔇":"🔊";if(muted&&window.speechSynthesis)speechSynthesis.cancel();else sfx.click()};
+
+const WORDS=["beak","tongue","hump","whiskers","antennae","spines","scales","fin","paws","claws","flippers","horns"];
+const Q=[
+ {a:"claws",e:"🦅",n:"eagle",c:"the <b>sharp, curved nails</b> on the eagle’s feet",h:"Birds of prey grab food with these sharp nails."},
+ {a:"whiskers",e:"🐱",n:"cat",c:"the <b>long, stiff hairs</b> on the cat’s face",h:"They help a cat feel things around it."},
+ {a:"beak",e:"🐦",n:"bird",c:"the <b>hard, pointed mouth</b> of the bird",h:"A bird uses it to eat. It has no teeth."},
+ {a:"scales",e:"🐟",n:"fish",c:"the <b>small, flat plates</b> that cover the fish’s body",h:"They protect the fish. There are many of them."},
+ {a:"spines",e:"🦔",n:"porcupine",c:"the <b>sharp points</b> on the porcupine’s back",h:"They protect the animal from enemies."},
+ {a:"antennae",e:"🦗",n:"insect",c:"the <b>two long feelers</b> on the insect’s head",h:"An insect uses them to feel and smell."},
+ {a:"paws",e:"🐻",n:"bear",c:"the bear’s <b>soft feet</b> with toes",h:"Bears, cats and dogs walk on these."},
+ {a:"flippers",e:"🐬",n:"dolphin",c:"the dolphin’s <b>flat front limbs</b> for swimming",h:"They help a sea animal steer in the water."},
+ {a:"hump",e:"🐪",n:"camel",c:"the <b>big lump</b> on the camel’s back",h:"It stores fat for the desert."},
+ {a:"tongue",e:"🦎",n:"chameleon",c:"the <b>long, sticky</b> part the chameleon shoots out to catch an insect",h:"It is inside your mouth too."},
+ {a:"horns",e:"🦌",n:"antelope",c:"the <b>two long, hard, curved</b> parts on the antelope’s head",h:"They grow on the head of goats, antelopes and bulls."},
+ {a:"fin",e:"🦈",n:"shark",c:"the <b>triangle</b> sticking out of the water on the shark’s back",h:"A fish uses it to swim and balance."}
+];
+const MAXPTS=Q.length*10;
+function trail(){$("tr").innerHTML=Q.map((_,i)=>`<i class="${res[i]===1?"on":res[i]===0?"off":i===idx?"now":""}"></i>`).join("")}
+function hud(){$("sc").textContent=score;$("st").textContent=streak;trail()}
+function start(){
+ $("app").innerHTML=`<div class="card center pop"><div style="font-size:3.2rem">🦅🐱🐟🦔🐬🐪🦎🦈</div>
+ <h1>Look and Label!</h1><p>Look at the part the arrow points to. Pick the correct word from the word bank.</p>
+ <p><input type="text" id="nm" maxlength="20" placeholder="Type your name" aria-label="Your name" autocomplete="off"></p>
+ <button class="btn" onclick="go()">Start</button></div>`;hud()
+}
+function go(){ac();name=($("nm").value||"Explorer").trim();sfx.click();speak("Hello "+name+"! Let's learn the body parts.");learn()}
+function say(w){sfx.click();speak(w)}
+function learn(){
+ idx=-1;hud();
+ const em={beak:"🐦",tongue:"👅",hump:"🐪",whiskers:"🐱",antennae:"🦗",spines:"🦔",scales:"🐟",fin:"🦈",paws:"🐾",claws:"🦅",flippers:"🐬",horns:"🦌"};
+ $("app").innerHTML=`<div class="card pop"><h2>Hello, ${name}! 👋</h2><p>Tap a card to hear the word. Then start the game!</p>
+ <div class="learn">${WORDS.map(w=>`<button onclick="say('${w}')"><span>${em[w]}</span>${w}</button>`).join("")}</div></div>
+ <div class="center"><button class="btn o" onclick="next()">I’m ready! 🚀</button></div>`
+}
+function next(){idx++;tries=0;locked=false;bad=[];sfx.click();hud();if(idx>=Q.length)return end();render()}
+function render(){
+ const q=Q[idx];
+ $("app").innerHTML=`<div class="card pop"><span class="tag">Write the correct word</span> <span style="float:right;font-weight:800">${idx+1} / ${Q.length}</span>
+ <div class="scene"><div class="an">${q.e}</div><div class="ar">👈</div></div>
+ <div class="clue">The arrow points to ${q.c}.</div>
+ <div class="slot" id="slot">?</div>
+ <div class="bank">${WORDS.map(w=>`<button class="w${used.includes(w)?" used":""}" ${used.includes(w)?"disabled":""} onclick="pick(this,'${w}')">${w}</button>`).join("")}</div>
+ <div class="fb" id="fb" aria-live="polite"></div><div class="center" id="nx"></div></div>`;
+ speak("Look at the "+q.n+". The arrow points to "+q.c.replace(/<[^>]+>/g,""))
+}
+function nextBtn(){$("nx").innerHTML=`<button class="btn" onclick="next()">${idx===Q.length-1?"See my result 🏆":"Next ➜"}</button>`}
+function pick(b,w){
+ if(locked)return;const q=Q[idx];speak(w);
+ if(w===q.a){
+  locked=true;b.classList.add("right");used.push(w);$("slot").textContent=w;
+  const pts=tries===0?10:5;score+=pts;streak++;best=Math.max(best,streak);res[idx]=1;sfx.ok();hud();
+  const f=$("fb");f.className="fb ok";f.textContent=(tries===0?"Perfect! 🎉":"Good job! 👍")+" +"+pts;
+  if(streak%3===0){setTimeout(()=>{sfx.star();confetti(14)},350);f.textContent+="  🔥 "+streak+" in a row!"}
+  nextBtn();return
+ }
+ b.classList.add("wrong");b.disabled=true;tries++;streak=0;sfx.no();
+ const c=$("app").firstElementChild;c.classList.remove("shake");void c.offsetWidth;c.classList.add("shake");
+ const f=$("fb");f.className="fb no";
+ if(tries>=2){
+  locked=true;res[idx]=0;used.push(q.a);hud();
+  document.querySelectorAll(".w").forEach(x=>{if(x.textContent===q.a){x.disabled=true;x.classList.add("right")}});
+  $("slot").textContent=q.a;f.innerHTML=`The answer is: <b>${q.a}</b>`;setTimeout(()=>speak(q.a),700);nextBtn();return
+ }
+ hud();f.textContent="Not yet. Hint: "+q.h
+}
+function end(){
+ const pc=Math.round(score/MAXPTS*100),st=pc>=85?3:pc>=60?2:pc>=30?1:0,right=res.filter(x=>x===1).length;
+ const msg=["Keep practising. You can do it! 💪","Good start! Try again for more stars.","Great work! Almost perfect!","Amazing! You know all the body parts!"][st];
+ const miss=Q.map((q,i)=>res[i]===0?`<div class="rev">${i+1}. ${q.e} ${q.n}: <b>${q.a}</b></div>`:"").join("");
+ sfx.win();confetti(40);speak("Well done "+name+"! Your score is "+score+" out of "+MAXPTS);
+ $("app").innerHTML=`<div class="card center pop"><h1>Well done, ${name}! 🏆</h1>
+ <div class="stars">${"⭐".repeat(st)}${"☆".repeat(3-st)}</div>
+ <h2>${score} / ${MAXPTS} points (${pc}%)</h2>
+ <p>Correct answers: <b>${right}</b> / ${Q.length} &nbsp;·&nbsp; Best streak: <b>🔥 ${best}</b></p>
+ <p>${msg}</p>
+ ${miss?`<p><b>Review these words:</b></p>${miss}`:""}
+ <button class="btn o" onclick="again()">Play again 🔄</button><button class="btn" onclick="learn()">Review words 📘</button></div>`
+}
+function again(){score=0;streak=0;best=0;idx=-1;res=[];used=[];sfx.click();learn()}
+start();
+</script>
+</body>
+</html>
